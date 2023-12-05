@@ -6,15 +6,11 @@ import sys
 import os
 from tkinter import *
 from PIL import Image
-import tkinter.messagebox as mb
+import tkinter.messagebox
 from tkinter import filedialog as fd 
 print(os.getcwd())
 EpsImagePlugin.gs_windows_binary =  r'gswin64c.exe'
 name =''
-x0=0
-y0=0
-a=0
-b=0
 original_x=1200
 original_y=900
 popravka_x=0
@@ -28,13 +24,11 @@ otstup_y=0
 step = 10
 kolonka_x = 0
 kolonka_y = 0
-proverka_setki = False
-name_proverka = False
 set_y_setki=19
 set_x_setki=19
-proverka_setki1=0
 set_color='red'
 color_pattern=1
+schema = []
 color_lib = {1: 'red', 2: 'darkgreen', 3: 'blue', 4: 'yellow', 5: 'green', 6: 'white'}
 window = tkinter.Tk()
 window.title("Хрестики української вишивки")
@@ -47,167 +41,107 @@ draw = turtle.RawTurtle(canvas)
 m = Menu(window)
 window.config(menu=m)
 
-def select(event):#функія яка вичисляє де потрібно поставити хрестик 
-    global kolonka_x
-    global kolonka_y
-    global schema
-    if proverka_setki1 != True:
-        f = open(name, 'r')
-        c,d = map(int, f.readline().split())#d=x c=y
-    else:
-        c=set_y_setki
-        d=set_x_setki
+def mathematic(c,d,new_x0,new_y0,step):
     a,b = (c * step,d * step)
-    otstup_x=(razmer_x-b)/2
-    otstup_y=(razmer_y-a)/2
-    #print(otstup_x,otstup_y)
+    k =b/2
+    l =a/2
+    x0 = (new_x0 - b/2)#-(step/2)
+    y0 = (new_y0 + a/2)#-(step/2)
+    return x0,y0,a,b
+
+def select(event):#функія яка вичисляє де потрібно поставити хрестик 
     widget = event.widget                     
     xc = widget.canvasx(event.x); yc = widget.canvasx(event.y)
-    #print(event.x,event.y)
+    x0, y0, a, b = mathematic(set_x_setki,set_y_setki,new_x0,new_y0,step)
+    otstup_x=(razmer_x-b)/2
+    otstup_y=(razmer_y-a)/2
     kolonka_x = ((event.x-otstup_x)//step)
     kolonka_y = ((event.y-otstup_y)//step)
-    if kolonka_x < 0:
-        kolonka_x=0
-    if kolonka_x > d:
-        kolonka_x = d
     if kolonka_y < 0:
         kolonka_y=0
-    if kolonka_y > c:
-        kolonka_y = c
+    if kolonka_y > set_x_setki-1:
+        kolonka_y = set_x_setki-1
+    if kolonka_x < 0:
+        kolonka_x=0
+    if kolonka_x > set_y_setki-1:
+        kolonka_x = set_y_setki-1
     kolonka_x=int(kolonka_x)
     kolonka_y=int(kolonka_y)
     print(kolonka_x,kolonka_y)
     schema[kolonka_y][kolonka_x] = color_pattern
-    krestik_x=(new_x0 - b/2)+(kolonka_x*step)+(step/2)
-    krestik_y=(new_y0 + a/2)-(kolonka_y*step)+(step/2)
-    draw.color(set_color)
-    draw.goto(krestik_x,krestik_y)
-    draw.down()
-    krestik(step)
-    draw.up()
+    krestik_new(kolonka_x,kolonka_y,step,color_pattern,x0,y0)
     
 canvas.bind("<Button-1>",select)
 
 def callback():#функція яка визиває вікно в якому можно вибрати файл і путь до ноьго записуєтся у змінну name
-    global name
-    global proverka_setki1
-    global name_proverka
+    global set_y_setki,set_x_setki,schema
     name= fd.askopenfilename() 
-    proverka_setki1 = False
-    name_proverka = True
-
     print(name)
+    f = open(name, 'r')
+    schema= []
+    set_y_setki,set_x_setki = map(int, f.readline().split())#d=y c=x
+    for i in range(set_x_setki):
+        s = list(map(int, f.readline().split()))
+        schema.append(s)
 
-def setka(step):#функція яка малює сітку
-    global schema
-    m=0 
-    l=0
-    if proverka_setki1 != True:
-        f = open(name, 'r')
-        c,d = map(int, f.readline().split())
-    else :
-        c=set_y_setki
-        d=set_x_setki
-        schema = [[0 for _ in range(c)] for _ in range(d)]
-
-    a,b = (c * step,d * step)
-    if d % 2  == 0:
-        kolichestvo_x = a + (2*step)
-    else:
-        kolichestvo_x = a + (step)
-    if d % 2  == 0:
-        kolichestvo_y = b + (2*step)
-    else: 
-        kolichestvo_y = b + (step)
-    f=(d // 2) + 1
-    b1= new_x0 - b/2
-    a1= new_y0 + a/2
-    g = (d // 2)+1
-    h= c // 2 + 1
+def setka(step,set_x_setki,set_y_setki):#функція яка малює сітку
+    x0, y0, a, b = mathematic(set_x_setki,set_y_setki,new_x0,new_y0,step)
     draw.color('Light gray')
     draw.speed(0)
     draw.up()
-    draw.goto(b1,a1+step)
-    draw.setheading(0)
-    for j in range(g):
-        draw.rt(90)
-        draw.down()
-        draw.fd(kolichestvo_x)
-        draw.up()
-        m=m+1
-        if m < d:
-            draw.setheading(0)
-            draw.fd(step)
-            draw.down()
-            draw.lt(90)
+    draw.goto(x0,y0+step)
+    draw.setheading(270)
+    kolichestvo_x = a + step
+    kolichestvo_y = b + step
+    for j in range(set_y_setki):
             draw.down()
             draw.fd(kolichestvo_x)
             draw.up()
             draw.setheading(0)
             draw.fd(step)
-            m=m+1
-    #if d % 2  == 0:
-        #draw.up()
-    #else:
-        #draw.rt(90)
-        #draw.down()
-        #draw.fd(a + (2 * step))    
-        #draw.up()
-        
-    draw.goto((b1-step),a1)
+            if j % 2 !=0:
+               draw.setheading(270) 
+            else:
+                draw.setheading(90)
+            draw.up()    
+    draw.goto(x0-step,y0)
     draw.setheading(0)
-    for i in range(h):
+    for i in range(set_x_setki):
         draw.down()
         draw.fd(kolichestvo_y)
         draw.up()
         draw.setheading(270)
         draw.fd(step)
-        draw.rt(90)
-        l=l+1
-        if l < c:
-            draw.down()
-            draw.fd(kolichestvo_y)
-            draw.up()
-            draw.setheading(270)
-            draw.fd(step)
-            draw.lt(90)
-            l=l+1
-    #if c % 2 == 0:
-        #draw.up()
-    #else:
-        #draw.down()
-        #draw.fd(b + (2 * step))
-        #draw.up()
+        if i % 2!=0:
+               draw.setheading(0) 
+        else:
+            draw.setheading(180)
 
 def krestik(n):#функція яка малює хрестік
     draw.speed(0)
     draw.down()
     draw.width(1)
-    draw.lt(45)
+    draw.setheading(45)
     draw.fd(n*math.sqrt(2))
     draw.up()
-    draw.lt(135)
+    draw.setheading(270)
     draw.fd(n)
-    draw.lt(135)
+    draw.setheading(135)
     draw.down()
     draw.fd(n*math.sqrt(2))
-    draw.lt(45)
-    draw.speed(0)
+    draw.up()
+
     
-def vushuvka(schema2,step,color=1):#функція яка малює хрестик згідно з шаблоном
-    f = open(name, 'r')
-    c,d = map(int, f.readline().split())
-    a,b = (c * step,d * step)
-    x0 = new_x0 - b/2+step/2
-    y0 = new_y0 + a/2+step/2
+def vushuvka(schema2,step,set_x_setki,set_y_setki):#функція яка малює хрестик згідно з шаблоном
+    x0, y0, a, b = mathematic(set_x_setki,set_y_setki,new_x0,new_y0,step)
     for indexrow, row in enumerate(schema2):
         for indexi, color in enumerate(row):
             if color != 0:
                 krestik_new(indexi,indexrow,step,color,x0,y0)
 
 def krestik_new(x,y,step,color,x0,y0):
-    cordinat_x= x0+step*x
-    cordinat_y=y0-step*y
+    cordinat_x=x0+step*x-step/2
+    cordinat_y=y0-step*y-step/2
     draw.goto(cordinat_x,cordinat_y)
     draw.color(color_lib[color])
     draw.down()
@@ -216,42 +150,15 @@ def krestik_new(x,y,step,color,x0,y0):
 
 def Board2():#ця функція малює сітку потім хрестики
     draw.reset() 
-    setka(step)
-    draw_click()
-    
-def draw_click ():#
-    global schema
-    k = 0
-    schema2 = []
-    schema = []
-    f = open(name, 'r')
-    c,d = map(int, f.readline().split())
-    a,b = (c * step,d * step)
-    x0 = new_x0 - b/2
-    y0 = new_y0 + a/2 - step
-    #print(x0,y0)
-    for i in range(c):
-        s = list(map(int, f.readline().split()))
-        schema.append(s)
-    for i in range(1, len(schema), 2):
-        schema2.append(schema[i-1])
-        schema2.append(schema[i][::-1])
-        k+=1
-    vushuvka(schema,step)
+    setka(step,set_x_setki,set_y_setki)
+    vushuvka(schema,step,set_x_setki,set_y_setki)
 
 def exit():#кнопка вийти 
     sys.exit()
 
 def my_file():
-    global schema
-    if proverka_setki1 != True:
-        f = open(name, 'r')
-        c,d = map(int, f.readline().split())
-    else :
-        c=set_y_setki
-        d=set_x_setki
     with open("Pattern.txt", 'w') as file:
-        file.write(f"{d} {c}\n")
+        file.write(f"{set_y_setki} {set_x_setki}\n")
         for row in schema:
             file.write(" ".join(map(str, row)) + '\n')
 
@@ -268,7 +175,6 @@ def save_size():#змінює розмір холста canva
    razmer_x=set_x
    razmer_y=set_y
    draw.reset() 
-   #print(set_x,set_y)
 
 def save_image():#збереження зображення
     canvas.postscript(file="my_dram.ps", colormode="color")
@@ -280,7 +186,7 @@ def clear():#кнопка очистити холст
 
 def draw_setka():#намалювати тільки сітку 
     draw.reset()
-    setka(step)
+    setka(step,set_x_setki,set_y_setki)
 
 def colorR():
     global color_pattern
@@ -327,12 +233,11 @@ def colorW():
 def save_size_setki():#ввести власні розміри сітки 
    global set_y_setki
    global set_x_setki
-   global proverka_setki1
-   set_x_setki = int(Entry_X_setki.get())
-   set_y_setki = int(Entry_Y_setki.get())
+   global schema
+   set_y_setki = int(Entry_X_setki.get())
+   set_x_setki = int(Entry_Y_setki.get())
+   schema = [[0 for _ in range(set_y_setki)] for _ in range(set_x_setki)]
    draw.reset()
-   proverka_setki1=True
-   #print(set_x_setki,set_y_setki)
 
 def click():#довідка
     dovidka = Tk()
